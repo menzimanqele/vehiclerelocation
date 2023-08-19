@@ -1,0 +1,11 @@
+{
+  "Version": 1,
+  "Hash": "e5bUWCYRBis8+NMZe9zCKigHFg/xp2niw/KwXmIeA3U=",
+  "Source": "VehicleRelocation.Api",
+  "BasePath": "_content/VehicleRelocation.Api",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": []
+}
