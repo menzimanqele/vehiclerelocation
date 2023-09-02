@@ -6,10 +6,10 @@ namespace VehicleRelocation.Api.Domain.Entities
     public class Vehicle : BaseEntity<Guid>, IAuditable
     {
         public Guid VehicleModelTypeId { get; set; }
-        public DateTime DateCreated { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public string CreatedBy { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public DateTime? DateUpdated { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-        public string UpdatedBy { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        public DateTime DateCreated { get ; set ; }
+        public string CreatedBy { get ; set ; }
+        public DateTime? DateUpdated { get ; set ; }
+        public string UpdatedBy { get ; set ; }
         public VehicleModelType VehicleModelType { get; set; }
         public string License { get; set; }
     }

@@ -3,9 +3,7 @@ namespace VehicleRelocation.Api.Domain.Entities.Base
 {
 	public class BaseSyncEntity
 	{
-		public BaseSyncEntity()
-		{
-		}
+		public DateTime LastSyncDateTime { get; set; }
 	}
 }
 
