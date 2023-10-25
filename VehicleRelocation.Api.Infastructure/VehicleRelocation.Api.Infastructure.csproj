@@ -6,4 +6,21 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <None Remove="Repositories\" />
+    <None Remove="InfastructureExtensions\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Repositories\" />
+    <Folder Include="InfastructureExtensions\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\VehicleRelocation.Api.Domain\VehicleRelocation.Api.Domain.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Dapper" Version="2.0.151" />
+    <PackageReference Include="Dapper.Contrib" Version="2.0.78" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="7.0.1" />
+    <PackageReference Include="Npgsql" Version="7.0.4" />
+  </ItemGroup>
 </Project>

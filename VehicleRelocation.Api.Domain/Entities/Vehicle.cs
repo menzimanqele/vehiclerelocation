@@ -12,6 +12,7 @@ namespace VehicleRelocation.Api.Domain.Entities
         public string UpdatedBy { get ; set ; }
         public VehicleModelType VehicleModelType { get; set; }
         public string License { get; set; }
+        public int CurrentMilage { get; set; }
     }
 }
 

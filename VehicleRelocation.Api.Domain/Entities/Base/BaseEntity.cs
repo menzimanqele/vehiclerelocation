@@ -8,4 +8,3 @@ namespace VehicleRelocation.Api.Domain.Entities.Base
 
 	}
 }
-

@@ -10,10 +10,15 @@
     <None Remove="Entities\" />
     <None Remove="Entities\Base\" />
     <None Remove="Interfaces\" />
+    <None Remove="Interfaces\Repositories\" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Entities\" />
     <Folder Include="Entities\Base\" />
     <Folder Include="Interfaces\" />
+    <Folder Include="Interfaces\Repositories\" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="System.Data.SqlClient" Version="4.8.5" />
   </ItemGroup>
 </Project>
