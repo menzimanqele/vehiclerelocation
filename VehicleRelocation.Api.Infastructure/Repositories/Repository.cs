@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+﻿using System.Data;
+using System.Linq.Expressions;
 using VehicleRelocation.Api.Domain.Entities.Base;
 using VehicleRelocation.Api.Domain.Interfaces.Repositories;
 using System.Data.Common;
@@ -13,32 +14,42 @@ namespace VehicleRelocation.Api.Infastructure.Repositories
 	{
         public readonly DatabaseConfig _databaseConfig;
         public readonly DbConnection _dbConnection;
+        private readonly string _connectionString;
         public Repository(IOptions<DatabaseConfig> databaseConfigOptions)
 		{
             _databaseConfig = databaseConfigOptions.Value;
+            _connectionString = _databaseConfig.ConnectionString;
             _dbConnection = GetConnection();
 		}
 
         public  DbConnection GetConnection()
         {
-            switch (_databaseConfig.ConnectionType)
+            switch (_databaseConfig.Provider)
             {
-                case "postgress":
-                    return new Npgsql.NpgsqlConnection(_databaseConfig.ConnnectionString);
+                case "postgres":
+                    return new Npgsql.NpgsqlConnection(_databaseConfig.ConnectionString);
                 case "sqlServer":
-                    return new SqlConnection(_databaseConfig.ConnnectionString);
+                    return new SqlConnection(_connectionString);
                 default:
                     throw new ArgumentException("Invalid connection type");
             }
 
         }
 
-        public virtual async void AddSync(T entity)
+        public virtual async Task AddSync(T entity)
         {
             using (var connection = _dbConnection)
             {
-                connection.Open();
+                if (connection.State == ConnectionState.Closed)
+                { 
+                    connection.ConnectionString = _connectionString;
+                    await connection.OpenAsync();
+                }
+
+              //  using var dbTransaction = await connection.BeginTransactionAsync(); 
                 await connection.InsertAsync(entity);
+              //  await dbTransaction.CommitAsync();
+        
             }
         }
 
@@ -65,14 +76,21 @@ namespace VehicleRelocation.Api.Infastructure.Repositories
             }
         }
 
-        public Task<bool> SaveChangesAsync()
-        {
-            throw new NotImplementedException();
-        }
+        // public async Task<bool> SaveChangesAsync()
+        // {
+        //     if (_dbConnection.State == ConnectionState.Open)
+        //     {
+        //         using var dbTransaction = _dbConnection.BeginTransaction();
+        //         await dbTransaction.CommitAsync();
+        //     }
+        //     throw new InvalidOperationException("Connection lost");
+        // }
+        //
+        //
 
         public virtual async Task<bool> DeleteAysnc(T entity)
         {
-            using (var connection = _dbConnection)
+            using (var connection = GetConnection())
             {
                 connection.Open();
                 return await  connection.DeleteAsync<T>(entity);

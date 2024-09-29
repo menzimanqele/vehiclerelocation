@@ -6,7 +6,7 @@ using VehicleRelocation.Api.Domain;
 
 namespace VehicleRelocation.Api.Infastructure.Repositories
 {
-    public class ManufactureRepository : Repository<Manufacture, Guid, SqlConnection>, IRepository<Manufacture, Guid, SqlConnection>
+    public class ManufactureRepository : Repository<Manufacture, Guid, SqlConnection>, IManufactureRepository //IRepository<Manufacture, Guid, SqlConnection>
     {
         public ManufactureRepository(IOptions<DatabaseConfig> databaseConfigOptions) : base(databaseConfigOptions)
         {
