@@ -40,16 +40,17 @@ namespace VehicleRelocation.Api.Infastructure.Repositories
         {
             using (var connection = _dbConnection)
             {
-                if (connection.State == ConnectionState.Closed)
-                { 
-                    connection.ConnectionString = _connectionString;
-                    await connection.OpenAsync();
-                }
-
-              //  using var dbTransaction = await connection.BeginTransactionAsync(); 
+                OpenConnection(connection);
                 await connection.InsertAsync(entity);
-              //  await dbTransaction.CommitAsync();
-        
+            }
+        }
+
+        private void OpenConnection(DbConnection connection)
+        {
+            if (connection.State == ConnectionState.Closed)
+            { 
+                connection.ConnectionString = _connectionString; 
+                connection.Open();
             }
         }
 
@@ -61,8 +62,8 @@ namespace VehicleRelocation.Api.Infastructure.Repositories
         public virtual async Task<IEnumerable<T>> GetAllAsync()
         {
             using (var connection = _dbConnection)
-            {
-                connection.Open();
+            { 
+                OpenConnection(connection);
                return await connection.GetAllAsync<T>();
             }
         }
@@ -71,28 +72,16 @@ namespace VehicleRelocation.Api.Infastructure.Repositories
         {
             using (var connection = _dbConnection)
             {
-                connection.Open();
+                OpenConnection(connection);
                 return await connection.GetAsync<T>(id);
             }
         }
-
-        // public async Task<bool> SaveChangesAsync()
-        // {
-        //     if (_dbConnection.State == ConnectionState.Open)
-        //     {
-        //         using var dbTransaction = _dbConnection.BeginTransaction();
-        //         await dbTransaction.CommitAsync();
-        //     }
-        //     throw new InvalidOperationException("Connection lost");
-        // }
-        //
-        //
-
+        
         public virtual async Task<bool> DeleteAysnc(T entity)
         {
             using (var connection = GetConnection())
             {
-                connection.Open();
+                OpenConnection(connection);
                 return await  connection.DeleteAsync<T>(entity);
             }
         }
