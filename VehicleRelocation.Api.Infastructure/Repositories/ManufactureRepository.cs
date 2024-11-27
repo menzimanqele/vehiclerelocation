@@ -8,8 +8,14 @@ namespace VehicleRelocation.Api.Infastructure.Repositories
 {
     public class ManufactureRepository : Repository<Manufacture, Guid, SqlConnection>, IManufactureRepository //IRepository<Manufacture, Guid, SqlConnection>
     {
-        public ManufactureRepository(IOptions<DatabaseConfig> databaseConfigOptions) : base(databaseConfigOptions)
+        private const string connectionName = "Default";
+        public ManufactureRepository(IOptions<List<DatabaseConfig>> databaseConfigOptions) : base(databaseConfigOptions.Value?.Where(x=>x.Name == connectionName).FirstOrDefault())
         {
+        }
+        
+        public Task<Manufacture> GetByCode(string code)
+        {
+            throw new NotImplementedException();
         }
     }
 }

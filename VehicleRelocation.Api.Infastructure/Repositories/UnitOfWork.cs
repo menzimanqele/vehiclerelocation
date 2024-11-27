@@ -1,32 +1,54 @@
+using System.Collections.Concurrent;
+using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using LinqToDB.Data;
 using VehicleRelocation.Api.Domain.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using VehicleRelocation.Api.Domain;
 using VehicleRelocation.Api.Domain.Interfaces.Repositories;
 using VehicleRelocation.Api.Infastructure.Persistence;
+using System.Linq;
+using System.Transactions;
+using LinqToDB;
+using LinqToDB.AspNet.Logging;
+using Microsoft.EntityFrameworkCore.Storage;
+
 
 namespace VehicleRelocation.Api.Infastructure.Repositories;
 
-public class UnitOfWork<TDbContext> : IUnitOfWork
-where TDbContext : AppDbContext
+public class UnitOfWork : IUnitOfWork
 {
     private  DataConnectionTransaction _dbTransaction;
     private readonly IServiceProvider _serviceProvider;
-    private readonly TDbContext _dbContext;
-    private readonly ILogger<UnitOfWork<TDbContext>> _logger;
+    //private readonly TDbContext _dbContext;
+    private readonly ConcurrentDictionary<string,DataContext> _connections = new ();
+    private readonly ILogger<UnitOfWork> _logger;
+    private readonly List<DatabaseConfig>? _dbConfigs;
     
-    public UnitOfWork(TDbContext dbContext, IServiceProvider serviceProvider, ILogger<UnitOfWork<TDbContext>> logger)
+    public UnitOfWork(IServiceProvider serviceProvider, ILogger<UnitOfWork> logger,IConfiguration configuration)
     {
-        _dbContext       = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+        _dbConfigs = configuration.GetSection("Data").Get<List<DatabaseConfig>>();
+        if (_dbConfigs == null) throw new ArgumentNullException(nameof(_dbConfigs));
+       // _dbContext       = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
+
+       foreach (var dbConfig in _dbConfigs)
+       {
+           AddConnection(dbConfig);
+       }
         _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
         _logger          = logger ?? throw new ArgumentNullException(nameof(logger));
+       // _connections = new ConcurrentDictionary<string, DataContext>();
     }
 
     public TRepository GetRepository<TRepository>(bool startTransaction) where TRepository : class, IRepository
     {
         if (_dbTransaction == null && startTransaction) BeginTransaction();
-        return _serviceProvider.GetRequiredService<TRepository>();
+        var repo = _serviceProvider.GetRequiredService<TRepository>();
+        
+        return repo;
     }
     
     public virtual async Task BeginTransactionAsync()
@@ -34,7 +56,11 @@ where TDbContext : AppDbContext
         try
         {
             if (_dbTransaction != null) return; // Transaction already started
-            _dbTransaction = await _dbContext.BeginTransactionAsync();
+            //_dbTransaction = await _dbContext.BeginTransactionAsync();
+             _dbTransaction = await _dbTransaction.DataConnection.BeginTransactionAsync();
+
+            
+            
         }
         catch (Exception exception)
         {
@@ -96,7 +122,7 @@ where TDbContext : AppDbContext
     public void Dispose()
     {
         if (_dbTransaction != null) RollbackTransaction();
-        _dbContext?.Dispose();
+       // _dbContext?.Dispose();
             
         GC.SuppressFinalize(this);
     }
@@ -104,7 +130,7 @@ where TDbContext : AppDbContext
     public virtual async ValueTask DisposeAsync()
     {
         if (_dbTransaction != null) await RollbackTransactionAsync();
-        await _dbContext.DisposeAsync();
+       // await _dbContext.DisposeAsync();
             
         GC.SuppressFinalize(this);
     }
@@ -114,7 +140,14 @@ where TDbContext : AppDbContext
         try
         {
             if (_dbTransaction != null) return; // Transaction already started
-            _dbTransaction = _dbContext.BeginTransaction();
+           // _dbTransaction = _dbContext.BeginTransaction();
+           _dbTransaction.DataConnection.BeginTransaction();
+           
+           foreach (var connection in _connections)
+           {
+              var m=   _connections[connection.Key].BeginTransaction();
+               _connections[connection.Key].;
+           }
         }
         catch (Exception exception)
         {
@@ -130,6 +163,10 @@ where TDbContext : AppDbContext
         try
         {
             _dbTransaction.Rollback();
+            /*foreach (var connection in _connections)
+            {
+                _connections[connection.Key].Transaction.Rollback();
+            }*/
         }
         catch (Exception exception)
         {
@@ -139,5 +176,35 @@ where TDbContext : AppDbContext
             _logger.LogError(exception, "Failed to roll back the transaction. Error: '{ErrorMessage}'", exception.Message);
             throw;
         }
+    }
+
+    private void AddConnection(DatabaseConfig databaseConfig)
+    {
+        if(string.IsNullOrEmpty(databaseConfig.Provider))
+            throw new InvalidEnumArgumentException($"Invalid provider {databaseConfig.Provider}");
+        
+        DataContext dataContext;
+
+        switch (databaseConfig.Provider)
+        {
+            case "sqlServer":
+                dataContext = new DataContext(new DataOptions()
+                    .UseSqlServer(connectionString: databaseConfig.ConnectionString)
+                    //.UseDefaultLogging(_serviceProvider)
+                );
+                break;
+            case "postgres":
+                dataContext = new DataContext(new DataOptions()
+                    .UsePostgreSQL(connectionString: databaseConfig.ConnectionString)
+                    //.UseDefaultLogging(_serviceProvider)
+                );
+                break;
+            default:
+                throw new InvalidEnumArgumentException($"Unsupported provider {databaseConfig.Provider}");
+            
+        }
+
+        if(_connections.ContainsKey(databaseConfig.Name))return;
+        _connections.TryAdd(databaseConfig.Name, dataContext);
     }
 }

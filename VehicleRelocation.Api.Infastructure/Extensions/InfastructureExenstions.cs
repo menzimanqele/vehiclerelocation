@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
+using VehicleRelocation.Api.Domain;
 using VehicleRelocation.Api.Domain.Interfaces;
 using VehicleRelocation.Api.Infastructure.Persistence;
 using VehicleRelocation.Api.Infastructure.Repositories;
@@ -16,19 +17,37 @@ namespace VehicleRelocation.Api.Infastructure.Extensions
 	{
 		public static void ResgisterInfastructure(IServiceCollection services, IConfiguration configuration)
 		{
+			
+			
+			
 			// services.AddDbContext<AppDbContext>(options =>
 			// options.UseSqlServer(configuration.GetConnectionString("Data"))
 			// );
 
+
+
 			services.AddLinqToDBContext<AppDbContext>((provoider, options) =>
-				options.UseSqlServer(configuration.GetSection("Data:ConnectionString").Value)
+				options.UseSqlServer(configuration.GetSection("Data").Get<List<DatabaseConfig>>()[0].ConnectionString)
+					
 					.UseDefaultLogging(provoider));
-			services.AddScoped<IUnitOfWork, UnitOfWork<AppDbContext>>();
+			
 			
 			// Register Data Access Services
 			//services.AddDataContextSupport<AppDbContext>(configuration, true, typeof(AppDbContext).Assembly);
 			
-			//services.AddScoped((Func<IServiceProvider, AppDbContext>) (_ => new AppDbContext()));
+			//services.AddScoped((Func<IServiceProvider, BulkSignatureDbContext>) (_ => new BulkSignatureDbContext()));
+			
+			services.AddLinqToDBContext<BulkSignatureDbContext>((provoider, options) =>
+				options.UseSqlServer(configuration.GetSection("Data").Get<List<DatabaseConfig>>()[1].ConnectionString)
+					.UseDefaultLogging(provoider));
+		//services.AddScoped<IUnitOfWork, UnitOfWork<AppDbContext>>();
+		//services.AddScoped<IUnitOfWork, UnitOfWork<BulkSignatureDbContext>>();
+			//services.AddScoped((Func<IServiceProvider, BulkSignatureDbContext>)(_ => new BulkSignatureDbContext()));
+
+			services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+
+
 		}
 		
 		private static void AddDataContextSupport<TDbContext>(this IServiceCollection services, IConfiguration configuration, bool migrateDatabases, params Assembly[] assemblies)
@@ -46,8 +65,9 @@ namespace VehicleRelocation.Api.Infastructure.Extensions
 			//services.AddScoped(_ => new TDbContext());
             
 			// Register Unit of Work
-			services.AddScoped<IUnitOfWork, UnitOfWork<TDbContext>>();
+			//services.AddScoped<IUnitOfWork, UnitOfWork<TDbContext>>();
 		}
+
 	}
 }
 

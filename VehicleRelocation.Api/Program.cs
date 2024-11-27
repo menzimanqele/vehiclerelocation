@@ -18,10 +18,12 @@ builder.Services.AddControllers();
 // Learn more abou  t configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.Configure<DatabaseConfig>(
+builder.Services.Configure<List<DatabaseConfig>>(
     builder.Configuration.GetSection("Data"));
 
-RegisterRepos(builder.Services);
+
+var getFromKeyVault = builder.Configuration["manqele"];
+
 var keyVaultUrl = "https://secret-sauce00058.vault.azure.net";//builder.Configuration.GetSection("KeyVault:keyVaultUrl");
 var clientId = "d551e4b4-eb5e-447f-b981-85e9034d077b"; //builder.Configuration.GetSection("KeyVault:clientId");
 var clientSecret = "Cp18Q~2pmGwFu.jvnTErSC6A-VrqtmZS8Wmt6dip"; //builder.Configuration.GetSection("KeyVault:clientSecret");
@@ -45,7 +47,7 @@ builder.Services.AddCors(options =>
 });
 
 InfastructureExenstions.ResgisterInfastructure(builder.Services, builder.Configuration);
-
+RegisterRepos(builder.Services);
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -55,7 +57,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+app.UseHttpsRedirection();  
 
 app.UseAuthorization();
 
@@ -66,5 +68,6 @@ app.Run();
  void RegisterRepos( IServiceCollection services)
 {
     services.AddScoped<IManufactureRepository, ManufactureRepository>();
+    services.AddScoped<ICategoryRepository, CategoryRepository>();
 }
 

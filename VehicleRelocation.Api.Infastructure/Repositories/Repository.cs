@@ -5,7 +5,6 @@ using VehicleRelocation.Api.Domain.Interfaces.Repositories;
 using System.Data.Common;
 using Dapper.Contrib.Extensions;
 using VehicleRelocation.Api.Domain;
-using Microsoft.Extensions.Options;
 using System.Data.SqlClient;
 
 namespace VehicleRelocation.Api.Infastructure.Repositories
@@ -15,9 +14,9 @@ namespace VehicleRelocation.Api.Infastructure.Repositories
         public readonly DatabaseConfig _databaseConfig;
         public readonly DbConnection _dbConnection;
         private readonly string _connectionString;
-        public Repository(IOptions<DatabaseConfig> databaseConfigOptions)
-		{
-            _databaseConfig = databaseConfigOptions.Value;
+        public Repository(DatabaseConfig databaseConfigOptions)
+        {
+            _databaseConfig =  databaseConfigOptions;
             _connectionString = _databaseConfig.ConnectionString;
             _dbConnection = GetConnection();
 		}
@@ -38,52 +37,52 @@ namespace VehicleRelocation.Api.Infastructure.Repositories
 
         public virtual async Task AddSync(T entity)
         {
-            using (var connection = _dbConnection)
-            {
-                OpenConnection(connection);
-                await connection.InsertAsync(entity);
-            }
+            await using var connection = _dbConnection;
+            OpenConnection(connection);
+            await connection.InsertAsync(entity);
         }
 
         private void OpenConnection(DbConnection connection)
         {
-            if (connection.State == ConnectionState.Closed)
-            { 
-                connection.ConnectionString = _connectionString; 
-                connection.Open();
-            }
+            if (connection.State != ConnectionState.Closed) return;
+            connection.ConnectionString = _connectionString; 
+            connection.Open();
         }
 
-        public Task<T> FindByConditionAsync(Expression<Func<T, bool>> predicate)
+        public async Task<IEnumerable<T>> FindByConditionAsync(Func<T, bool> predicate)
         {
-            throw new NotImplementedException();
+            await using var connection = _dbConnection;
+            OpenConnection(connection);
+            var result = await connection.GetAllAsync<T>();
+            return result.Where(predicate);;
         }
 
         public virtual async Task<IEnumerable<T>> GetAllAsync()
         {
-            using (var connection = _dbConnection)
-            { 
-                OpenConnection(connection);
-               return await connection.GetAllAsync<T>();
-            }
+            await using var connection = _dbConnection;
+            OpenConnection(connection);
+            return await connection.GetAllAsync<T>();
         }
 
         public async Task<T> GetByIdAsync(TKey id)
         {
-            using (var connection = _dbConnection)
-            {
-                OpenConnection(connection);
-                return await connection.GetAsync<T>(id);
-            }
+            await using var connection = _dbConnection;
+            OpenConnection(connection);
+            return await connection.GetAsync<T>(id);
         }
         
-        public virtual async Task<bool> DeleteAysnc(T entity)
+        public virtual async Task<bool> DeleteAsync(T entity)
         {
-            using (var connection = GetConnection())
-            {
-                OpenConnection(connection);
-                return await  connection.DeleteAsync<T>(entity);
-            }
+            await using var connection = GetConnection();
+            OpenConnection(connection);
+            return await  connection.DeleteAsync<T>(entity);
+        }
+
+        public virtual async Task<bool> UpdateAsync(T entity)
+        {
+            await using var connection = GetConnection();
+            OpenConnection(connection);
+            return await  connection.UpdateAsync<T>(entity);
         }
     }
 }

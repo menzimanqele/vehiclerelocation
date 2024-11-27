@@ -11,11 +11,9 @@ namespace VehicleRelocation.Api.Controllers
     [Route("[controller]")]
     public class ManufactureController : ControllerBase
     {
-        private readonly IManufactureRepository _manufactureRepository;
         private readonly IUnitOfWork _unitOfWork;
-        public ManufactureController(IManufactureRepository manufactureRepository, IUnitOfWork unitOfWork)
+        public ManufactureController(IUnitOfWork unitOfWork)
         {
-            _manufactureRepository = manufactureRepository;
             _unitOfWork = unitOfWork;
         }
 
@@ -25,36 +23,41 @@ namespace VehicleRelocation.Api.Controllers
             var random = new Random();
             var _randomName = random.Next(1, 100);
             var carName = "BMW " + _randomName;
-            var result = await _unitOfWork.GetRepository<IManufactureRepository>(false).GetAllAsync(); //await _manufactureRepository.GetAllAsync();
+            var result = await _unitOfWork.GetRepository<IManufactureRepository>(true).GetAllAsync(); //await _manufactureRepository.GetAllAsync();
             //return result;
-            var modelToDelete = result.First();
-            Console.WriteLine(modelToDelete.Name);
+            var modelToDelete = result.Where(x=>x.Id != default).FirstOrDefault();
+            
+            modelToDelete.Name = "modelToDelete.Name "+ _randomName;
+           // Console.WriteLine(modelToDelete.Name);
 
-            var deleteAysnc = await _unitOfWork.GetRepository<IManufactureRepository>(true).DeleteAysnc(modelToDelete);
-             //var d = await _manufactureRepository.DeleteAysnc(modelToDelete);
-             
-             
-           // await _manufactureRepository.SaveChangesAsync();
-           
+             var deleteAysnc = await _unitOfWork.GetRepository<IManufactureRepository>(true).DeleteAsync(modelToDelete);
+            var id = Guid.NewGuid();
+            
             var model = new Manufacture
             {
-               Id = Guid.NewGuid(),
+               Id = id,
                Name = carName,
                Description = carName,
                CreatedBy = "Menzi Manqele",
                DateCreated = DateTime.Now
             };
 
-             await _unitOfWork.GetRepository<IManufactureRepository>(false).AddSync(model);
-          //  _manufactureRepository.AddSync(model);
-             //await _manufactureRepository.SaveChangesAsync();
-           //if(result is not null)
-           // {
-           //     return result.ToList();
-           // }
+            var categoryModel = new Category
+            {
+                Id = 2,
+                Name = "Politics" + _randomName ,
+                DisplayOrder = 7
+            };
+           // await _unitOfWork.GetRepository<ICategoryRepository>(false).AddSync(categoryModel);
            
-           await _unitOfWork.SaveChangesAsync();
+           
+           // await _unitOfWork.GetRepository<IManufactureRepository>(false).AddSync(model);
+            await _unitOfWork.GetRepository<IManufactureRepository>(false).UpdateAsync(modelToDelete);
+            await _unitOfWork.SaveChangesAsync();
 
+            /*await _unitOfWork.RollbackTransactionAsync();
+            await _unitOfWork.CommitTransactionAsync();*/
+            var categoriesResults = await _unitOfWork.GetRepository<ICategoryRepository>(false).GetAllAsync();
            
             return new List<Manufacture>();
         }

@@ -10,11 +10,11 @@ namespace VehicleRelocation.Api.Domain.Interfaces.Repositories
     public interface IRepository<T, TKey, IDbConnection> where T : BaseEntity<TKey>
     {
         Task<IEnumerable<T>> GetAllAsync();
-        Task<T> GetByIdAsync(TKey id);
+        Task<T> GetByIdAsync(TKey id);      
         Task AddSync(T entity);
-       // Task<bool> SaveChangesAsync();
-        Task<T> FindByConditionAsync(Expression<Func<T, bool>> predicate);
-        Task<bool> DeleteAysnc(T entity);
+        Task<IEnumerable<T>> FindByConditionAsync(Func<T, bool> predicate);
+        Task<bool> DeleteAsync(T entity);
+        Task<bool> UpdateAsync(T entity);
     }
 }
 
